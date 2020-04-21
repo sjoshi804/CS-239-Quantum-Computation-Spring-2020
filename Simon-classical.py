@@ -7,6 +7,7 @@
 # Assumption in code is that the input of f is a string of n 0s & 1s
 # Input: f - the function, n - the number of bits f takes as input
 # Output: s as a bit vector - string of 0s & 1s
+# Result: Easy to see that in the worst 2^(n-1) queries are required
 
 import random 
 

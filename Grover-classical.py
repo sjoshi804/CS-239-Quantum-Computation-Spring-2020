@@ -1,12 +1,11 @@
 # Solution is a function here that solves the Simon problem
 # f: {0, 1}^n -> {0, 1} s.t.
-# there exists s in {0,1}^n such that 
-# forall x,y: [f(x) = f(y)] iff [(x bitwisexor y) in {0^n, s}].
-# i.e. if f(x) = f(y) then x = y or x bitwisexor y = s
-# Solution must return s
+# solution must output 1 if there exists x s.t. f(x) = 1
 # Assumption in code is that the input of f is a string of n 0s & 1s
 # Input: f - the function, n - the number of bits f takes as input
-# Output: s as a number in binary (leading)
+# Output: a single bit (as an integer)
+# Result: Easy to see that in the worst 2^n queries are required
+
 import random
 def solution(f, n):
     for i in range(2**n): #Loop through all inputs
