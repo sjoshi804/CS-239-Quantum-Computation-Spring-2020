@@ -7,13 +7,13 @@
 # Assumption in code is that the input of f is a string of n 0s & 1s
 # Input: f - the function, n - the number of bits f takes as input
 # Output: s as a bit vector - string of 0s & 1s
-# Result: Easy to see that in the worst 2^(n-1) queries are required
+# Result: Easy to see that in the worst 2^n queries are required
 
 import random 
 
 def solution(f, n):
     hash_table = {}
-    for i in range(1, (2**(n - 1)) + 1): #Loop through to test more than half the values for s
+    for i in range(1, (2**n)): #Loop through to test
         x = format(i, '0' + str(n) + 'b') #get input in desired format - string of 0s and 1s representing a bit vector
 
         #check if this answer has appeared before
