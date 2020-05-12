@@ -7,6 +7,7 @@ from pyquil import Program, get_qc
 from pyquil.api import QuantumComputer
 from pyquil.gates import H, MEASURE
 
+
 #Helper Functions
 def bitwise_xor(a, b):
     if len(a) != len(b):
@@ -62,7 +63,7 @@ class Simon:
             el = inputs[i]
             x = el[:self.num_bits]
             y = self.f(x)
-            output = x + bitwise_xor(el[self.num_bits:], y)
+            output = x + self.bitwise_xor(el[self.num_bits:], y)
             j = inputs.index(output)
             matrix_u_f[i][j] = 1
 
@@ -87,11 +88,15 @@ class Simon:
 
     def run(self):
         for i in range(0, self.max_iterations):
-            sample = np.array(self.qc.run(self.executable)[0], dtype=int)
-            self.equations.append(sample[:self.num_bits])
+            for i in range(0, self.num_bits - 1):
+                sample = np.array(self.qc.run(self.executable)[0], dtype=int)
+                self.equations.append(sample[:self.num_bits])
+            if (len(self.solve_lin_system()) == 2):
+                return self.candidates
         return self.solve_lin_system()
                 
     def solve_lin_system(self):
+        self.candidates = []
         for i in range(0, 2**self.num_bits):
             eq = True
             s = np.array(list(np.binary_repr(i, self.num_bits))).astype(np.int8)
@@ -104,10 +109,13 @@ class Simon:
                 self.candidates.append(np.binary_repr(i, self.num_bits))
         return self.candidates
 
+    def bitwise_xor(self, a, b):
+        if len(a) != len(b):
+            raise ValueError("Arguments must have same length!")
+        return "{0:0{1:0d}b}".format(xor(int(a, 2), int(b, 2)), len(a))
 
 
-""" 
-# Test Code - Uncomment block to use
+""" # Test Code - Uncomment block to use
 
 n = 2
 test_secret = np.binary_repr(3, n)
@@ -121,7 +129,7 @@ def func_secret(x):
 
 qc = get_qc('9q-square-qvm')
 qc.compiler.client.timeout = 10000
-solver = Simon(qc, func_secret, n, 10)
+solver = Simon(qc, func_secret, n, 4)
 candidates = solver.run()
 if '00' in candidates:
     print("Test confirms '00' in candidates")
@@ -129,4 +137,4 @@ if test_secret in candidates:
     print("Test confirms " + str(test_secret) + " in candidates")
 if len(candidates) == 2:
     print("Test confirms length is exactly 2") 
-"""
+ """
