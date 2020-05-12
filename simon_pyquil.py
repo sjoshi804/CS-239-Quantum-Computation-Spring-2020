@@ -103,16 +103,30 @@ class Simon:
             if eq:
                 self.candidates.append(np.binary_repr(i, self.num_bits))
         return self.candidates
+
+
+##Testing 
+
 n = 2
+test_secret = np.binary_repr(3, n)
 def func_no_secret(x):
     func_dict = create_1to1_dict(mask=np.binary_repr(1, n))
     return func_dict[x]
 
 def func_secret(x):
-    func_dict = create_2to2_dict(mask=np.binary_repr(1, n), secret=np.binary_repr(3, n))
+    func_dict = create_2to2_dict(mask=np.binary_repr(1, n), secret=test_secret)
     return func_dict[x]
 
+""" 
+# Test Code - Uncomment block to use
 qc = get_qc('9q-square-qvm')
 qc.compiler.client.timeout = 10000
 solver = Simon(qc, func_secret, n, 10)
-print(solver.run())
+candidates = solver.run()
+if '00' in candidates:
+    print("Test confirms '00' in candidates")
+if test_secret in candidates:
+    print("Test confirms " + str(test_secret) + " in candidates")
+if len(candidates) == 2:
+    print("Test confirms length is exactly 2") 
+"""
