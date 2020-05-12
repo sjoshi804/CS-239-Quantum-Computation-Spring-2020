@@ -46,23 +46,25 @@ class Simon:
         self.helper_qubits = self.qubits[num_bits:]
         self.oracle = self.create_unitary_matrix()
         self.circuit = self.create_quantum_circuit()
+        self.executable = self.compile()
         self.equations = []
+        self.candidates = []
 
     def create_unitary_matrix(self):
+        #Create list of all inputs
+        inputs = [np.binary_repr(i, 2*self.num_bits) for i in range(0, 2**(2*self.num_bits))]
 
         #Create empty emptry matrix 
         matrix_u_f = np.zeros(shape=(2**(2 * self.num_bits), 2**(2 * self.num_bits)))
 
-        #Iteratively set relevant values to 1 in matrix
-        for helper in range(2**self.num_bits):
-            helper_bitstring = np.binary_repr(helper, self.num_bits)
-            for input_val in range(2**self.num_bits):
-                input_bitstring = np.binary_repr(input_val, self.num_bits)
-                output_bitstring = self.f(input_bitstring)
-                i, j = int(helper_bitstring + input_bitstring, 2), int(bitwise_xor(helper_bitstring, output_bitstring) + input_bitstring, 2)
-                matrix_u_f[i, j] = 1        
-        
-        #Returns matrix that maps helper bits | input bits -> helper bits xor output bits | input bits - key point is that helper bits are first
+        # #Iteratively set relevant values to 1 in each row of permutation matrix
+        for i in range(0, len(inputs)):
+            el = inputs[i]
+            x = el[:self.num_bits]
+            y = self.f(x)
+            output = x + bitwise_xor(el[self.num_bits:], y)
+            j = inputs.index(output)
+            matrix_u_f[i][j] = 1
 
         return matrix_u_f
 
@@ -71,33 +73,46 @@ class Simon:
         circuit = Program()
         circuit.defgate("ORACLE", self.oracle)
         circuit.inst([H(i) for i in self.computational_qubits])
-        circuit.inst(tuple(["ORACLE"] + sorted(self.qubits, reverse=True)))
+        circuit.inst(tuple(["ORACLE"] + self.qubits))
         circuit.inst([H(i) for i in self.computational_qubits])
         return circuit
 
+    def compile(self):
+        circuit = Program()
+        simon_ro = circuit.declare('ro', 'BIT', len(self.qubits))
+        circuit += self.circuit
+        circuit += [MEASURE(qubit, ro) for qubit, ro in zip(self.qubits, simon_ro)]
+        executable = self.qc.compile(circuit)
+        return executable
+
     def run(self):
         for i in range(0, self.max_iterations):
-            circuit = Program()
-            simon_ro = circuit.declare('ro', 'BIT', len(self.computational_qubits))
-            circuit += self.circuit
-            circuit += [MEASURE(qubit, ro) for qubit, ro in zip(self.computational_qubits, simon_ro)]
-            executable = self.qc.compile(circuit)
-            sample = np.array(self.qc.run(executable)[0], dtype=int)
-            self.equations.append(sample)
-        print(self.equations)
+            sample = np.array(self.qc.run(self.executable)[0], dtype=int)
+            self.equations.append(sample[:self.num_bits])
+        return self.solve_lin_system()
                 
     def solve_lin_system(self):
-        pass
-
+        for i in range(0, 2**self.num_bits):
+            eq = True
+            s = np.array(list(np.binary_repr(i, self.num_bits))).astype(np.int8)
+            for y_list in self.equations:
+                y = np.array(y_list)
+                if ((np.dot(s, y) % 2) != 0):
+                    eq = False
+                    break
+            if eq:
+                self.candidates.append(np.binary_repr(i, self.num_bits))
+        return self.candidates
 n = 2
 def func_no_secret(x):
-    func_dict = create_1to1_dict(mask=np.binary_repr(2, n))
+    func_dict = create_1to1_dict(mask=np.binary_repr(1, n))
     return func_dict[x]
 
 def func_secret(x):
-    func_dict = create_2to2_dict(mask=np.binary_repr(1, n), secret=np.binary_repr(1, n))
+    func_dict = create_2to2_dict(mask=np.binary_repr(1, n), secret=np.binary_repr(3, n))
     return func_dict[x]
 
 qc = get_qc('9q-square-qvm')
-solver = Simon(qc, func_secret, n, 2)
-solver.run()
+qc.compiler.client.timeout = 10000
+solver = Simon(qc, func_secret, n, 10)
+print(solver.run())
