@@ -24,13 +24,26 @@ where:
 
 ### How to execute
 
-This class has many useful functions such as create_unitary_matrix, create_circuit, compile, solve_lin_system, bitwise_xor, run. However, the only function a user needs to use typically is run and after instatiating the class with the necessary parameters, the user can simply call the .run() method of the instance variable to run the program and return a list of candidates. 
+This class has many useful functions such as create_unitary_matrix, create_circuit, compile, solve_lin_system, bitwise_xor, run. However, the only function a user needs to use typically is run and after instatiating the class with the necessary parameters, the user can simply call the .run() method of the instance variable to run the program and return a list of candidates. The run variable takes no parameters. 
+
+An example of how to use this method is shown here:
+```
+solver = Simon(qc, f, 2, 4)
+candidates = solver.run()
+```
 
 ### Output
 
 The output is a list of strings with each string representing a bit vector of length num_bits. This list is ideally length 2 when the program is able to obtain n - 1 linearly independent equations. However, if the program wasn't able to do so, the list contains all possible candidates. Thus the trivial candidate the string of all 0s is always included and depending on 
 whether the function uses an s != 0 and how many linearly independent equations the quantum 
 section of the algorithm is able to produce, there may be other members in this list. 
+
+An example output is shown here:
+```
+['00', '11']
+```
+
+This output can be understood as indicating that there are two solutions to the system of linear equations found and in fact in this case i.e. when there are just two elements in the list of candidates we know for a fact that we have successfully found the secret s and know exactly what it is.
 
 ### Example Code
 ```
