@@ -38,20 +38,20 @@ class Simon:
     #Constructor
     #f is a function that takes as input a string in binary and returns as output a string in binary
     def __init__(self, qc, f, num_bits, max_iterations):
-        self.qc = qc
-        self.f = f
+        self.__qc = qc
+        self.__f = f
         self.num_bits = num_bits
         self.max_iterations = max_iterations
         self.qubits = list(range(2 * num_bits))
         self.computational_qubits = self.qubits[:num_bits]
         self.helper_qubits = self.qubits[num_bits:]
-        self.oracle = self.create_unitary_matrix()
-        self.circuit = self.create_quantum_circuit()
-        self.executable = self.compile()
+        self.__oracle = self.__create_unitary_matrix()
+        self.__circuit = self.__create_quantum_circuit()
+        self.__executable = self.__compile()
         self.equations = []
         self.candidates = []
 
-    def create_unitary_matrix(self):
+    def __create_unitary_matrix(self):
         #Create list of all inputs
         inputs = [np.binary_repr(i, 2*self.num_bits) for i in range(0, 2**(2*self.num_bits))]
 
@@ -62,7 +62,7 @@ class Simon:
         for i in range(0, len(inputs)):
             el = inputs[i]
             x = el[:self.num_bits]
-            y = self.f(x)
+            y = self.__f(x)
             output = x + self.bitwise_xor(el[self.num_bits:], y)
             j = inputs.index(output)
             matrix_u_f[i][j] = 1
@@ -70,29 +70,27 @@ class Simon:
         return matrix_u_f
 
 
-    def create_quantum_circuit(self):
+    def __create_quantum_circuit(self):
         circuit = Program()
-        circuit.defgate("ORACLE", self.oracle)
+        circuit.defgate("ORACLE", self.__oracle)
         circuit.inst([H(i) for i in self.computational_qubits])
         circuit.inst(tuple(["ORACLE"] + self.qubits))
         circuit.inst([H(i) for i in self.computational_qubits])
         return circuit
 
-    def compile(self):
+    def __compile(self):
         circuit = Program()
         simon_ro = circuit.declare('ro', 'BIT', len(self.qubits))
-        circuit += self.circuit
+        circuit += self.__circuit
         circuit += [MEASURE(qubit, ro) for qubit, ro in zip(self.qubits, simon_ro)]
-        executable = self.qc.compile(circuit)
+        executable = self.__qc.compile(circuit)
         return executable
 
     def run(self):
         for i in range(0, self.max_iterations):
             for i in range(0, self.num_bits - 1):
-                sample = np.array(self.qc.run(self.executable)[0], dtype=int)
+                sample = np.array(self.__qc.run(self.__executable)[0], dtype=int)
                 self.equations.append(sample[:self.num_bits])
-            if (len(self.solve_lin_system()) == 2):
-                return self.candidates
         return self.solve_lin_system()
                 
     def solve_lin_system(self):
@@ -115,7 +113,8 @@ class Simon:
         return "{0:0{1:0d}b}".format(xor(int(a, 2), int(b, 2)), len(a))
 
 
-""" # Test Code - Uncomment block to use
+""" 
+# Test Code - Uncomment block to use
 
 n = 2
 test_secret = np.binary_repr(3, n)
@@ -129,12 +128,7 @@ def func_secret(x):
 
 qc = get_qc('9q-square-qvm')
 qc.compiler.client.timeout = 10000
-solver = Simon(qc, func_secret, n, 4)
+solver = Simon(qc, func_secret, n, 8)
 candidates = solver.run()
-if '00' in candidates:
-    print("Test confirms '00' in candidates")
-if test_secret in candidates:
-    print("Test confirms " + str(test_secret) + " in candidates")
-if len(candidates) == 2:
-    print("Test confirms length is exactly 2") 
+print(candidates)
  """

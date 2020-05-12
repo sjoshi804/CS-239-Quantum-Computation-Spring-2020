@@ -57,8 +57,9 @@ class Solver(object):
         X = np.hstack(tuple(xs))
         B = np.hstack(tuple(bs))
         
-        A = np.linalg.solve(X, B)
+        A = np.linalg.solve(np.linalg.inv(B), np.linalg.inv(X))
         self.__u_f = np.array(A)
+        print(self.__u_f)
         
         self.__u_f_definition = DefGate("U_f", self.__u_f)
         self.__U_f = self.__u_f_definition.get_constructor()
@@ -77,13 +78,14 @@ class Solver(object):
         print(self.__p)
     
     def solve(self):
-        print('Value of b: {}'.format(self.f("0"*self.n)))
         with local_forest_runtime():
             qc = get_qc('9q-square-qvm')
-            result = qc.run_and_measure(self.__p, trials = 10)
-            for i in range(self.n):
-                print(result[i])
+            result = qc.run_and_measure(self.__p, trials = 1)
+        a = ''
+        for i in range(self.n):
+            a+=str(result[i][0])
         
+        return a
 
 def random_bit_string_generator(n=1):
     '''
@@ -125,7 +127,9 @@ def addition_mod_2(x,y):
 n = 3
 #random_bit_string_generator(len(x))
 #random.choice([0,1])
-f = lambda x: addition_mod_2(inner_product_mod_2("101", x), 1)
+f = lambda x: addition_mod_2(inner_product_mod_2("111", x), 1)
 
 solver = Solver(f, n)
-solver.solve()
+a = solver.solve()
+print('Value of a: {}'.format(a))
+print('Value of b: {}'.format(f("0"*n)))

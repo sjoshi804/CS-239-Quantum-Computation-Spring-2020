@@ -8,10 +8,12 @@ from pyquil.api import local_forest_runtime
 
 class Solver(object):
 
-    def __init__(self, f, n):   
+    def __init__(self, f, n, n_trials=10):   
         self.f = f
         self.n = n
         self.k = int(np.floor((np.pi/4)*np.sqrt(2**n)))
+
+        self.n_trials = n_trials
 
         self.__build_circuit()
 
@@ -50,7 +52,7 @@ class Solver(object):
         negative =  -np.identity(2**n)
         self.__negative_definition = DefGate("NEGATIVE", negative)
         self.__NEGATIVE = self.__negative_definition.get_constructor()
-        
+
     def __build_circuit(self):
         self.__produce_z_f_gate()
         self.__produce_z_0_gate()
@@ -77,13 +79,20 @@ class Solver(object):
     def solve(self):
         with local_forest_runtime():
             qc = get_qc('9q-square-qvm')
-            result = qc.run_and_measure(self.__p, trials = 10)
+            n_trials = 10
+            result = qc.run_and_measure(self.__p, trials = self.n_trials)
+        values = list()
+        for j in range(self.n_trials):
+            value = ''
             for i in range(self.n):
-                print(result[i])
-
-
+                value+=str(result[i][j])
+            values.append(value)
+        return values
 n=3
 f = lambda x: 1 if x=="101" else 0
 
 solver = Solver(f, n)
-print(solver.solve())
+xs = solver.solve()
+print(xs)
+for idx, x in enumerate(xs):
+    print("Trial {}, x: {}".format(idx, x))
