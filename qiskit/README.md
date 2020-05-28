@@ -266,7 +266,7 @@ s.
 ### How to execute
 
 This class has many useful functions such as create_unitary_matrix, 
-create_circuit, compile, solve_lin_system, bitwise_xor, run. However, the only 
+create_circuit, solve_lin_system, bitwise_xor, run. However, the only 
 function a user needs to use typically is run and after instatiating the class 
 with the necessary parameters, the user can simply call the .run() method of 
 the instance variable to run the program and return a list of candidates. The 
@@ -303,8 +303,9 @@ successfully found the secret s and know exactly what it is.
 
 ### Example Code
 ```
-# Test Code 
-n = 2
+# Test Code - Uncomment block to use
+
+n = 4
 test_secret = np.binary_repr(3, n)
 def func_no_secret(x):
     func_dict = create_1to1_dict(mask=np.binary_repr(1, n))
@@ -314,9 +315,9 @@ def func_secret(x):
     func_dict = create_2to2_dict(mask=np.binary_repr(1, n), secret=test_secret)
     return func_dict[x]
 
-qc = get_qc('9q-square-qvm')
-qc.compiler.client.timeout = 10000
-solver = Simon(qc, func_secret, n, 10)
+# Use Aer's qasm_simulator
+simulator = Aer.get_backend('qasm_simulator')
+solver = Simon(simulator, func_secret, n, 8)
 candidates = solver.run()
 print(candidates)
 ```
