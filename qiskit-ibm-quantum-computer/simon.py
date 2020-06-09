@@ -48,6 +48,7 @@ class Simon:
         self.__circuit = self.__create_quantum_circuit()
         self.equations = []
         self.candidates = []
+        self.timing_of_latest_run = None
 
     def __create_unitary_matrix(self):
         #Create list of all inputs
@@ -82,6 +83,7 @@ class Simon:
         for i in range(0, self.max_iterations):
             job = execute(self.__circuit, self.__simulator, shots=self.num_bits-1)
             result = job.result().get_counts(self.__circuit)
+            self.timing_of_latest_run = job.result().time_taken
             self.equations += list(result.keys())
         self.equations = list(dict.fromkeys(self.equations))
         return self.solve_lin_system()
@@ -105,9 +107,13 @@ class Simon:
             raise ValueError("Arguments must have same length!")
         return "{0:0{1:0d}b}".format(xor(int(a, 2), int(b, 2)), len(a))
 
+    def get_time_of_latest_run(self):
+        return self.timing_of_latest_run
+
+
 # Test Code - Uncomment block to use
-n = 4
-test_secret = np.binary_repr(0, n)
+n = 2
+test_secret = np.binary_repr(1, n)
 def func_no_secret(x):
     func_dict = create_1to1_dict(mask=np.binary_repr(1, n))
     return func_dict[x]
@@ -125,3 +131,4 @@ qc = provider.get_backend("ibmq_16_melbourne")
 solver = Simon(qc, func_secret, n, 8)
 candidates = solver.run()
 print(candidates) 
+print(solver.get_time_of_latest_run())
